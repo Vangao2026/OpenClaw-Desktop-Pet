@@ -1,7 +1,7 @@
 /**
- * Claw Pet - Ladybug Animation Engine (v3 - Gradient Style)
- * Smooth gradient red body, large light-blue-pupil eyes,
- * thin red antennae, heart hands, stick legs. Animated.
+ * Claw Pet - Lobster Animation Engine (OpenClaw Style)
+ * Matches openclaw.ai mascot: rounded body, side claws, antennae,
+ * black eyes with cyan glow dots, coral gradient.
  */
 
 class PetRenderer {
@@ -15,9 +15,8 @@ class PetRenderer {
     this.isBlinking = false;
     this.bounceY = 0;
     this.antennaSwing = 0;
-    this.legSwing = 0;
+    this.clawSwing = 0;
     this.mouthOpen = 0;
-    this.heartPulse = 0;
     this.particles = [];
     this.breathOffset = 0;
     this.eyeGlowPhase = 0;
@@ -33,12 +32,10 @@ class PetRenderer {
   update() {
     this.tick++;
     this.breathOffset = Math.sin(this.tick * 0.03) * 2;
-    this.antennaSwing = Math.sin(this.tick * 0.035) * 0.12;
-    this.legSwing = Math.sin(this.tick * 0.05) * 0.06;
-    this.heartPulse = 1 + Math.sin(this.tick * 0.07) * 0.06;
-    this.eyeGlowPhase = (Math.sin(this.tick * 0.04) + 1) * 0.5;
+    this.antennaSwing = Math.sin(this.tick * 0.035) * 0.15;
+    this.clawSwing = Math.sin(this.tick * 0.04) * 0.08;
+    this.eyeGlowPhase = (Math.sin(this.tick * 0.05) + 1) * 0.5;
 
-    // Blink
     this.blinkTimer++;
     if (!this.isBlinking && this.blinkTimer > 200 + Math.random() * 160) {
       this.isBlinking = true; this.blinkTimer = 0;
@@ -47,7 +44,6 @@ class PetRenderer {
       this.isBlinking = false; this.blinkTimer = 0;
     }
 
-    // Idle → sleep
     if (this.state === 'idle') {
       this.idleTimer++;
       if (this.idleTimer > 600) this.setState('sleep');
@@ -55,22 +51,20 @@ class PetRenderer {
       this.idleTimer = 0;
     }
 
-    // Bounce decay
     if (this.bounceY < 0) { this.bounceY *= 0.88; if (this.bounceY > -0.5) this.bounceY = 0; }
 
-    // Mouth
     if (this.state === 'talk') {
       this.mouthOpen = 3 + Math.sin(this.tick * 0.35) * 2.5;
     } else {
       this.mouthOpen *= 0.88;
     }
 
-    // Happy hearts
+    // Happy sparkles
     if (this.state === 'happy' && this.tick % 10 === 0) {
       this.particles.push({
         x: 180 + (Math.random() - 0.5) * 50, y: 130,
         vx: (Math.random() - 0.5) * 1, vy: -0.8 - Math.random() * 1.2,
-        life: 1, size: 6 + Math.random() * 4, type: 'heart',
+        life: 1, size: 3 + Math.random() * 3, type: 'sparkle',
       });
     }
 
@@ -79,7 +73,7 @@ class PetRenderer {
       this.particles.push({
         x: 180 + (Math.random() - 0.5) * 30, y: 95,
         vx: (Math.random() - 0.5) * 0.8, vy: -0.4 - Math.random() * 0.8,
-        life: 1, size: 2 + Math.random() * 2, type: 'sparkle',
+        life: 1, size: 2 + Math.random() * 2, type: 'dot',
       });
     }
 
@@ -103,13 +97,10 @@ class PetRenderer {
   }
 
   // ---- Gradient helpers ----
-
-  bodyGradient(ctx, cx, cy, r) {
-    const g = ctx.createRadialGradient(cx - r * 0.25, cy - r * 0.3, r * 0.1, cx, cy, r);
-    g.addColorStop(0, '#FF6B6B');    // bright highlight
-    g.addColorStop(0.4, '#E53935');  // main red
-    g.addColorStop(0.85, '#C62828'); // darker edge
-    g.addColorStop(1, '#B71C1C');    // deepest edge
+  bodyGradient(ctx, x1, y1, x2, y2) {
+    const g = ctx.createLinearGradient(x1, y1, x2, y2);
+    g.addColorStop(0, '#FF6B6B');
+    g.addColorStop(1, '#E53935');
     return g;
   }
 
@@ -124,28 +115,25 @@ class PetRenderer {
     ctx.save();
     ctx.translate(cx, cy);
 
-    // Outer glow (subtle red ambient)
-    const glowR = 80 + Math.sin(this.tick * 0.02) * 4;
-    const glow = ctx.createRadialGradient(0, 8, 40, 0, 8, glowR);
-    glow.addColorStop(0, 'rgba(229, 57, 53, 0.08)');
+    // Outer glow
+    const glowR = 85 + Math.sin(this.tick * 0.02) * 4;
+    const glow = ctx.createRadialGradient(0, 5, 40, 0, 5, glowR);
+    glow.addColorStop(0, 'rgba(255, 107, 107, 0.08)');
     glow.addColorStop(1, 'transparent');
     ctx.fillStyle = glow;
-    ctx.fillRect(-glowR, 8 - glowR, glowR * 2, glowR * 2);
+    ctx.fillRect(-glowR, 5 - glowR, glowR * 2, glowR * 2);
 
     // Shadow
     ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
     ctx.beginPath();
-    ctx.ellipse(0, 58 - this.bounceY * 0.3, 40, 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 65 - this.bounceY * 0.3, 38, 8, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Legs (behind body)
-    this.drawLegs(ctx);
+    // Claws (behind body)
+    this.drawClaws(ctx, b);
 
     // Body
     this.drawBody(ctx, b);
-
-    // Heart hands
-    this.drawHearts(ctx);
 
     // Face
     this.drawFace(ctx);
@@ -163,209 +151,210 @@ class PetRenderer {
 
   drawBody(ctx, b) {
     const squish = 1 + b * 0.003;
-    const r = 46 * squish;
 
-    // Main body with gradient
-    ctx.fillStyle = this.bodyGradient(ctx, 0, 8, r);
+    // Main body - rounded dome shape (like the SVG)
+    const bodyGrad = this.bodyGradient(ctx, -50, -50, 50, 60);
+    ctx.fillStyle = bodyGrad;
     ctx.beginPath();
-    ctx.ellipse(0, 8, r, r, 0, 0, Math.PI * 2);
+    // Top dome
+    ctx.moveTo(0, -55);
+    ctx.bezierCurveTo(45, -55, 55, -15, 50, 20);
+    ctx.bezierCurveTo(48, 45, 30, 60, 0, 62);
+    ctx.bezierCurveTo(-30, 60, -48, 45, -50, 20);
+    ctx.bezierCurveTo(-55, -15, -45, -55, 0, -55);
+    ctx.closePath();
     ctx.fill();
 
-    // Subtle rim light (top-left arc)
-    ctx.strokeStyle = 'rgba(255, 200, 200, 0.15)';
-    ctx.lineWidth = 2;
+    // Body shine
+    const shine = ctx.createRadialGradient(-15, -25, 0, 0, 0, 50);
+    shine.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
+    shine.addColorStop(0.5, 'rgba(255, 255, 255, 0.04)');
+    shine.addColorStop(1, 'transparent');
+    ctx.fillStyle = shine;
     ctx.beginPath();
-    ctx.ellipse(0, 8, r - 1, r - 1, -Math.PI * 0.7, -Math.PI * 0.3, Math.PI * 0.2);
-    ctx.stroke();
-  }
-
-  drawFace(ctx) {
-    const eyeY = -4;
-    const eyeSpacing = 16;
-    const eyeR = 12;
-
-    if (this.isBlinking || this.state === 'sleep') {
-      // Closed eyes
-      ctx.strokeStyle = '#80DEEA';
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
-      [-eyeSpacing, eyeSpacing].forEach(ex => {
-        ctx.beginPath();
-        ctx.arc(ex, eyeY, eyeR * 0.55, 0.3, Math.PI - 0.3);
-        ctx.stroke();
-      });
-    } else {
-      [-eyeSpacing, eyeSpacing].forEach(ex => {
-        // Eye white
-        ctx.fillStyle = '#FFFFFF';
-        ctx.beginPath();
-        ctx.arc(ex, eyeY, eyeR, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Light blue pupil/iris (large, fills most of eye)
-        const pupilR = eyeR * 0.68;
-        const pg = ctx.createRadialGradient(ex, eyeY, 0, ex, eyeY, pupilR);
-        pg.addColorStop(0, '#B3E5FC');     // light center
-        pg.addColorStop(0.5, '#4FC3F7');   // mid blue
-        pg.addColorStop(1, '#0288D1');     // edge blue
-        ctx.fillStyle = pg;
-        ctx.beginPath();
-        ctx.arc(ex, eyeY, pupilR, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Dark inner pupil dot
-        ctx.fillStyle = '#0D2137';
-        ctx.beginPath();
-        ctx.arc(ex + 1, eyeY + 1, eyeR * 0.28, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Eye glow (subtle cyan aura)
-        const eg = ctx.createRadialGradient(ex, eyeY, eyeR * 0.8, ex, eyeY, eyeR * 1.5);
-        eg.addColorStop(0, `rgba(79, 195, 247, ${0.12 + this.eyeGlowPhase * 0.08})`);
-        eg.addColorStop(1, 'transparent');
-        ctx.fillStyle = eg;
-        ctx.fillRect(ex - eyeR * 1.5, eyeY - eyeR * 1.5, eyeR * 3, eyeR * 3);
-
-        // Highlights
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-        ctx.beginPath();
-        ctx.arc(ex + 3.5, eyeY - 3.5, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
-        ctx.beginPath();
-        ctx.arc(ex - 2, eyeY + 4, 1.5, 0, Math.PI * 2);
-        ctx.fill();
-      });
-    }
-
-    // Blush
-    ctx.fillStyle = 'rgba(255, 138, 128, 0.35)';
-    ctx.beginPath();
-    ctx.ellipse(-26, 8, 7, 4.5, -0.15, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 48, 55, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(26, 8, 7, 4.5, 0.15, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Mouth
-    if (this.mouthOpen > 0.5) {
-      ctx.fillStyle = '#C62828';
-      ctx.beginPath();
-      ctx.ellipse(0, 16, 4.5, this.mouthOpen, 0, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      ctx.strokeStyle = '#C62828';
-      ctx.lineWidth = 1.8;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.arc(0, 13, 6, 0.15, Math.PI - 0.15);
-      ctx.stroke();
-    }
   }
 
-  drawHearts(ctx) {
-    const p = this.heartPulse;
-    const s = 10 * p;
-    this.drawHeart(ctx, -48, 4, s, -0.15);
-    this.drawHeart(ctx, 48, 4, s, 0.15);
-  }
+  drawClaws(ctx, b) {
+    const sw = this.clawSwing;
 
-  drawHeart(ctx, x, y, size, angle) {
+    // Left claw
     ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
+    ctx.translate(-45, 10 + b * 0.3);
+    ctx.rotate(-0.15 + sw);
 
-    // Gradient heart
-    const hg = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
-    hg.addColorStop(0, '#FF6B6B');
-    hg.addColorStop(0.7, '#E53935');
-    hg.addColorStop(1, '#C62828');
-    ctx.fillStyle = hg;
+    const clawGrad = this.bodyGradient(ctx, -25, -15, 5, 15);
+    ctx.fillStyle = clawGrad;
 
-    const r = size * 0.28;
+    // Claw arm
     ctx.beginPath();
-    ctx.arc(-r * 1.1, -r * 0.3, r, Math.PI, 0, false);
-    ctx.arc(r * 1.1, -r * 0.3, r, Math.PI, 0, false);
-    ctx.lineTo(0, r * 2.2);
+    ctx.ellipse(-12, 0, 14, 10, -0.3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Claw pincer top
+    ctx.beginPath();
+    ctx.moveTo(-20, -5);
+    ctx.quadraticCurveTo(-32, -18, -22, -22);
+    ctx.quadraticCurveTo(-14, -18, -14, -8);
+    ctx.closePath();
+    ctx.fill();
+
+    // Claw pincer bottom
+    ctx.beginPath();
+    ctx.moveTo(-20, 5);
+    ctx.quadraticCurveTo(-32, 18, -22, 22);
+    ctx.quadraticCurveTo(-14, 18, -14, 8);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+
+    // Right claw
+    ctx.save();
+    ctx.translate(45, 10 + b * 0.3);
+    ctx.rotate(0.15 - sw);
+
+    ctx.fillStyle = clawGrad;
+
+    ctx.beginPath();
+    ctx.ellipse(12, 0, 14, 10, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(20, -5);
+    ctx.quadraticCurveTo(32, -18, 22, -22);
+    ctx.quadraticCurveTo(14, -18, 14, -8);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(20, 5);
+    ctx.quadraticCurveTo(32, 18, 22, 22);
+    ctx.quadraticCurveTo(14, 18, 14, 8);
     ctx.closePath();
     ctx.fill();
 
     ctx.restore();
   }
 
-  drawAntennae(ctx, b) {
-    const swing = this.antennaSwing;
+  drawFace(ctx) {
+    const eyeY = -15;
+    const eyeSpacing = 18;
+    const eyeR = 8;
 
-    ctx.lineCap = 'round';
+    if (this.isBlinking || this.state === 'sleep') {
+      // Closed eyes - cute arcs
+      ctx.strokeStyle = '#050810';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      [-eyeSpacing, eyeSpacing].forEach(ex => {
+        ctx.beginPath();
+        ctx.arc(ex, eyeY, eyeR * 0.6, 0.3, Math.PI - 0.3);
+        ctx.stroke();
+      });
+    } else {
+      [-eyeSpacing, eyeSpacing].forEach(ex => {
+        // Eye (black, like the SVG)
+        ctx.fillStyle = '#050810';
+        ctx.beginPath();
+        ctx.arc(ex, eyeY, eyeR, 0, Math.PI * 2);
+        ctx.fill();
 
-    [{ x: -12, rot: -0.35 + swing, cx: -4, ex: -10 },
-     { x: 12, rot: 0.35 - swing, cx: 4, ex: 10 }].forEach(a => {
-      ctx.save();
-      ctx.translate(a.x, -42 + b * 0.3);
-      ctx.rotate(a.rot);
+        // Cyan glow dot (like the SVG: cx+1, cy-1, r=2)
+        ctx.fillStyle = '#00E5CC';
+        const glowSize = 2.5 + this.eyeGlowPhase * 0.5;
+        ctx.beginPath();
+        ctx.arc(ex + 2, eyeY - 2, glowSize, 0, Math.PI * 2);
+        ctx.fill();
 
-      // Antenna shaft with gradient
-      const ag = ctx.createLinearGradient(0, 0, a.ex, -26);
-      ag.addColorStop(0, '#E53935');
-      ag.addColorStop(1, '#C62828');
-      ctx.strokeStyle = ag;
-      ctx.lineWidth = 2;
+        // Glow aura
+        const eg = ctx.createRadialGradient(ex + 2, eyeY - 2, 0, ex + 2, eyeY - 2, 8);
+        eg.addColorStop(0, `rgba(0, 229, 204, ${0.2 + this.eyeGlowPhase * 0.1})`);
+        eg.addColorStop(1, 'transparent');
+        ctx.fillStyle = eg;
+        ctx.fillRect(ex - 8, eyeY - 10, 20, 20);
+
+        // Small white highlight
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.beginPath();
+        ctx.arc(ex + 3, eyeY - 3, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    // Mouth
+    if (this.mouthOpen > 0.5) {
+      ctx.fillStyle = '#C62828';
       ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.quadraticCurveTo(a.cx, -16, a.ex, -26);
-      ctx.stroke();
-
-      // Tip ball with gradient
-      const tg = ctx.createRadialGradient(a.ex - 1, -27, 0, a.ex, -26, 4);
-      tg.addColorStop(0, '#FF6B6B');
-      tg.addColorStop(1, '#E53935');
-      ctx.fillStyle = tg;
-      ctx.beginPath();
-      ctx.arc(a.ex, -26, 3.5, 0, Math.PI * 2);
+      ctx.ellipse(0, 8, 4, this.mouthOpen, 0, 0, Math.PI * 2);
       ctx.fill();
-
-      ctx.restore();
-    });
+    } else {
+      ctx.strokeStyle = '#C62828';
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(0, 5, 5, 0.15, Math.PI - 0.15);
+      ctx.stroke();
+    }
   }
 
-  drawLegs(ctx) {
-    const sw = this.legSwing;
+  drawAntennae(ctx, b) {
+    const sw = this.antennaSwing;
 
     ctx.lineCap = 'round';
 
-    const legs = [
-      { x: -28, y: 28, angle: 0.5 + sw, len: 14 },
-      { x: -36, y: 12, angle: 0.85 + sw * 0.7, len: 14 },
-      { x: -28, y: -2, angle: 1.15 + sw * 0.4, len: 14 },
-      { x: 28, y: 28, angle: Math.PI - 0.5 - sw, len: 14 },
-      { x: 36, y: 12, angle: Math.PI - 0.85 - sw * 0.7, len: 14 },
-      { x: 28, y: -2, angle: Math.PI - 1.15 - sw * 0.4, len: 14 },
-    ];
+    // Left antenna (like SVG: M45 15 Q35 5 30 8)
+    ctx.save();
+    ctx.translate(-18, -50 + b * 0.3);
+    ctx.rotate(-0.4 + sw);
 
-    legs.forEach(leg => {
-      const ex = leg.x + Math.cos(leg.angle) * leg.len;
-      const ey = leg.y + Math.sin(leg.angle) * leg.len;
+    const ag = ctx.createLinearGradient(0, 0, -15, -25);
+    ag.addColorStop(0, '#FF6B6B');
+    ag.addColorStop(1, '#E53935');
+    ctx.strokeStyle = ag;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(-8, -15, -15, -22);
+    ctx.stroke();
 
-      const lg = ctx.createLinearGradient(leg.x, leg.y, ex, ey);
-      lg.addColorStop(0, '#E53935');
-      lg.addColorStop(1, '#C62828');
-      ctx.strokeStyle = lg;
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(leg.x, leg.y);
-      ctx.lineTo(ex, ey);
-      ctx.stroke();
-    });
+    // Tip
+    ctx.fillStyle = '#FF6B6B';
+    ctx.beginPath();
+    ctx.arc(-15, -22, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Right antenna (like SVG: M75 15 Q85 5 90 8)
+    ctx.save();
+    ctx.translate(18, -50 + b * 0.3);
+    ctx.rotate(0.4 - sw);
+
+    ctx.strokeStyle = ag;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(8, -15, 15, -22);
+    ctx.stroke();
+
+    ctx.fillStyle = '#FF6B6B';
+    ctx.beginPath();
+    ctx.arc(15, -22, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   drawParticles(ctx) {
     this.particles.forEach(p => {
       ctx.globalAlpha = p.life;
-      if (p.type === 'heart') {
-        this.drawHeart(ctx, p.x - 180, p.y - 155, p.size, 0);
+      if (p.type === 'sparkle') {
+        ctx.fillStyle = '#00E5CC';
+        ctx.beginPath();
+        ctx.arc(p.x - 180, p.y - 155, p.size, 0, Math.PI * 2);
+        ctx.fill();
       } else {
-        ctx.fillStyle = '#4FC3F7';
+        ctx.fillStyle = '#FF6B6B';
         ctx.beginPath();
         ctx.arc(p.x - 180, p.y - 155, p.size, 0, Math.PI * 2);
         ctx.fill();
@@ -377,13 +366,13 @@ class PetRenderer {
   drawSleepZzz(ctx, cx, cy) {
     const t = this.tick * 0.02;
     for (let i = 0; i < 3; i++) {
-      const x = cx + 38 + i * 10 + Math.sin(t + i) * 3;
-      const baseY = cy - 45 - i * 16;
+      const x = cx + 42 + i * 10 + Math.sin(t + i) * 3;
+      const baseY = cy - 50 - i * 16;
       const y = baseY - ((this.tick * 0.2 + i * 25) % 50);
       const size = 10 + i * 3;
       const alpha = Math.max(0, 1 - ((this.tick * 0.2 + i * 25) % 50) / 50);
       ctx.globalAlpha = alpha * 0.5;
-      ctx.fillStyle = '#4FC3F7';
+      ctx.fillStyle = '#00E5CC';
       ctx.font = `bold ${size}px sans-serif`;
       ctx.fillText('z', x, y);
     }

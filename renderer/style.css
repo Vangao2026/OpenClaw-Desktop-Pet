@@ -127,11 +127,11 @@ html, body {
 }
 
 .msg-pet {
-  color: #80DEEA;
+  color: #00E5CC;
 }
 
 .msg-pet::before {
-  content: '🐞 ';
+  content: '🦞 ';
   font-size: 10px;
 }
 
@@ -201,8 +201,8 @@ html, body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #00E5FF;
-  box-shadow: 0 0 6px rgba(0, 229, 255, 0.6);
+  background: #00E5CC;
+  box-shadow: 0 0 6px rgba(0, 229, 204, 0.6);
   animation: pulse-dot 2s infinite;
 }
 
