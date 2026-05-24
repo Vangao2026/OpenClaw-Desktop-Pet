@@ -6,4 +6,5 @@ contextBridge.exposeInMainWorld('petAPI', {
   setSize: (w, h) => ipcRenderer.invoke('pet-set-size', w, h),
   minimize: () => ipcRenderer.invoke('pet-minimize'),
   quit: () => ipcRenderer.invoke('pet-quit'),
+  setIgnore: (ignore) => ipcRenderer.invoke('pet-set-ignore', ignore),
 });

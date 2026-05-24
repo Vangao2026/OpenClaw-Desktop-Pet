@@ -7,9 +7,9 @@ class ChatManager {
   constructor() {
     this.config = {
       gatewayUrl: 'http://127.0.0.1:18789',
-      token: '6d89000bef9d295f51e61f802d783687a7c5404f91cda2f0',
+      token: '',
       model: 'openclaw',
-      user: 'desktop-pet', // stable session key
+      user: 'desktop-pet',
     };
 
     this.messages = [];

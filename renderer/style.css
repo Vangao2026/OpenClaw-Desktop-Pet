@@ -214,10 +214,11 @@ html, body {
 /* Music bar */
 #music-bar {
   position: absolute;
-  top: 6px;
+  top: 4px;
   left: 50%;
   transform: translateX(-50%);
-  width: 260px;
+  width: 240px;
+  padding: 6px 10px;
   background: rgba(20, 8, 8, 0.92);
   border: 1px solid rgba(255, 69, 58, 0.35);
   border-radius: 10px;
@@ -280,8 +281,8 @@ html, body {
 
 /* Music info and controls wrapper (hidden on collapse) */
 #music-bar > *:not(#music-header) {
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: 2px;
+  padding-right: 2px;
 }
 
 #music-bar > #music-info {
@@ -331,6 +332,18 @@ html, body {
   background: linear-gradient(90deg, #E53935, #FF5252);
   border-radius: 2px;
   transition: width 0.5s linear;
+}
+
+#music-lyric {
+  color: #FF8A80;
+  font-size: 10px;
+  text-align: center;
+  padding: 2px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 16px;
+  line-height: 16px;
 }
 
 #music-time {

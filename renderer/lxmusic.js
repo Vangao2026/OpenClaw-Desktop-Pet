@@ -44,11 +44,11 @@ class LXMusicController {
   }
   async next()    { await this.request('/skip-next'); return this.getStatus(); }
   async prev()    { await this.request('/skip-prev'); return this.getStatus(); }
-  async volume(v) { await this.request(`/volume?volume=${v}`); }
-  async mute()    { await this.request('/mute?mute=true'); }
-  async unmute()  { await this.request('/mute?mute=false'); }
-  async collect() { await this.request('/collect'); }
-  async uncollect() { await this.request('/uncollect'); }
+  async volume(v) { await this.request(`/volume?volume=${v}`); return this.getStatus(); }
+  async mute()    { await this.request('/mute?mute=true'); return this.getStatus(); }
+  async unmute()  { await this.request('/mute?mute=false'); return this.getStatus(); }
+  async collect() { await this.request('/collect'); return this.getStatus(); }
+  async uncollect() { await this.request('/uncollect'); return this.getStatus(); }
 
   startPolling(interval = 3000) {
     this.stopPolling();

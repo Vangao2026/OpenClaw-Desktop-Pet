@@ -9,9 +9,9 @@ function createWindow() {
 
   win = new BrowserWindow({
     width: 360,
-    height: 520,
+    height: 400,
     x: screenW - 400,
-    y: screenH - 560,
+    y: screenH - 440,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
@@ -33,13 +33,12 @@ function createWindow() {
 
   // System tray for minimize/quit
   const iconPath = path.join(__dirname, 'renderer', 'assets', 'tray-icon.png');
-  let trayIcon;
-  try {
+  const fs = require('fs');
+  let trayIcon = nativeImage.createEmpty();
+  if (fs.existsSync(iconPath)) {
     trayIcon = nativeImage.createFromPath(iconPath);
-  } catch {
-    trayIcon = nativeImage.createEmpty();
   }
-  tray = new Tray(trayIcon.isEmpty() ? nativeImage.createEmpty() : trayIcon);
+  tray = new Tray(trayIcon);
 
   const contextMenu = Menu.buildFromTemplate([
     { label: 'Show', click: () => win.show() },
@@ -77,6 +76,15 @@ ipcMain.handle('pet-minimize', () => {
 ipcMain.handle('pet-quit', () => {
   app.isQuitting = true;
   app.quit();
+});
+
+// Click-through on transparent areas
+ipcMain.handle('pet-set-ignore', (_, ignore) => {
+  if (ignore) {
+    win.setIgnoreMouseEvents(true, { forward: true });
+  } else {
+    win.setIgnoreMouseEvents(false);
+  }
 });
 
 app.whenReady().then(createWindow);
