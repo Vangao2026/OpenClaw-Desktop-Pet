@@ -1,5 +1,5 @@
 {
-  "name": "claw-desktop-pet",
+  "name": "openclaw-desktop-pet",
   "version": "1.0.0",
   "description": "Claw - AI Desktop Pet",
   "main": "main.js",
@@ -14,8 +14,8 @@
     "electron-builder": "^25.0.0"
   },
   "build": {
-    "appId": "com.claw.desktop-pet",
-    "productName": "Claw Pet",
+    "appId": "com.openclaw.desktop-pet",
+    "productName": "OpenClaw Desktop Pet",
     "win": {
       "target": "nsis",
       "icon": "renderer/assets/icon.png",

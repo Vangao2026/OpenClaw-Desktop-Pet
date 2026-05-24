@@ -44,7 +44,7 @@ function createWindow() {
     { label: 'Show', click: () => win.show() },
     { label: 'Quit', click: () => { app.isQuitting = true; app.quit(); } },
   ]);
-  tray.setToolTip('Claw Desktop Pet');
+  tray.setToolTip('OpenClaw Desktop Pet');
   tray.setContextMenu(contextMenu);
 
   win.on('close', (e) => {

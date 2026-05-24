@@ -1,4 +1,4 @@
-# Claw Desktop Pet 🐞
+# OpenClaw Desktop Pet 🦞
 
 一只可爱的瓢虫桌面宠物，基于 Electron + Canvas 构建。支持 AI 对话和 LX Music 音乐控制。
 
@@ -27,8 +27,8 @@
 
 ```bash
 # 克隆项目
-git clone https://github.com/Vangao2026/claw-desktop-pet.git
-cd claw-desktop-pet
+git clone https://github.com/Vangao2026/OpenClaw-Desktop-Pet.git
+cd OpenClaw-Desktop-Pet
 
 # 安装依赖
 npm install
