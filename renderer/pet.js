@@ -1,7 +1,10 @@
 /**
- * Claw Pet - Lobster Animation Engine (OpenClaw Style)
- * Matches openclaw.ai mascot: rounded body, side claws, antennae,
- * black eyes with cyan glow dots, coral gradient.
+ * Claw Pet - Lobster Animation Engine (v4 - SVG-Accurate)
+ * Uses exact SVG paths from openclaw.ai homepage, converted to Canvas.
+ * Body: M60 10 C30 10 15 35 15 55 C15 75 30 95 45 100 L45 110...
+ * Claws: M20 45 C5 40 0 50 5 60... / M100 45 C115 40 120 50 115 60...
+ * Eyes: circles at (45,35) r=6 and (75,35) r=6, cyan dots at (46,34) r=2
+ * Antennae: M45 15 Q35 5 30 8 / M75 15 Q85 5 90 8
  */
 
 class PetRenderer {
@@ -21,6 +24,11 @@ class PetRenderer {
     this.breathOffset = 0;
     this.eyeGlowPhase = 0;
 
+    // Scale: SVG is 120x120, we draw at 2.2x centered
+    this.scale = 2.2;
+    this.offsetX = 180 - 60 * this.scale; // center horizontally
+    this.offsetY = 155 - 55 * this.scale; // center vertically
+
     this.startLoop();
   }
 
@@ -31,9 +39,9 @@ class PetRenderer {
 
   update() {
     this.tick++;
-    this.breathOffset = Math.sin(this.tick * 0.03) * 2;
-    this.antennaSwing = Math.sin(this.tick * 0.035) * 0.15;
-    this.clawSwing = Math.sin(this.tick * 0.04) * 0.08;
+    this.breathOffset = Math.sin(this.tick * 0.03) * 1.5;
+    this.antennaSwing = Math.sin(this.tick * 0.035) * 0.12;
+    this.clawSwing = Math.sin(this.tick * 0.04) * 0.06;
     this.eyeGlowPhase = (Math.sin(this.tick * 0.05) + 1) * 0.5;
 
     this.blinkTimer++;
@@ -54,12 +62,11 @@ class PetRenderer {
     if (this.bounceY < 0) { this.bounceY *= 0.88; if (this.bounceY > -0.5) this.bounceY = 0; }
 
     if (this.state === 'talk') {
-      this.mouthOpen = 3 + Math.sin(this.tick * 0.35) * 2.5;
+      this.mouthOpen = 2 + Math.sin(this.tick * 0.35) * 2;
     } else {
       this.mouthOpen *= 0.88;
     }
 
-    // Happy sparkles
     if (this.state === 'happy' && this.tick % 10 === 0) {
       this.particles.push({
         x: 180 + (Math.random() - 0.5) * 50, y: 130,
@@ -67,8 +74,6 @@ class PetRenderer {
         life: 1, size: 3 + Math.random() * 3, type: 'sparkle',
       });
     }
-
-    // Talk sparkles
     if (this.state === 'talk' && this.tick % 14 === 0) {
       this.particles.push({
         x: 180 + (Math.random() - 0.5) * 30, y: 95,
@@ -96,269 +101,196 @@ class PetRenderer {
     this.idleTimer = 0;
   }
 
-  // ---- Gradient helpers ----
-  bodyGradient(ctx, x1, y1, x2, y2) {
-    const g = ctx.createLinearGradient(x1, y1, x2, y2);
-    g.addColorStop(0, '#FF6B6B');
-    g.addColorStop(1, '#E53935');
-    return g;
+  // ---- SVG Path helpers ----
+
+  // Convert SVG path to Canvas, with optional transform
+  svgBodyPath(ctx) {
+    // M60 10 C30 10 15 35 15 55 C15 75 30 95 45 100 L45 110 L55 110 L55 100
+    // C55 100 60 102 65 100 L65 110 L75 110 L75 100 C90 95 105 75 105 55
+    // C105 35 90 10 60 10Z
+    ctx.moveTo(60, 10);
+    ctx.bezierCurveTo(30, 10, 15, 35, 15, 55);
+    ctx.bezierCurveTo(15, 75, 30, 95, 45, 100);
+    ctx.lineTo(45, 110);
+    ctx.lineTo(55, 110);
+    ctx.lineTo(55, 100);
+    ctx.bezierCurveTo(55, 100, 60, 102, 65, 100);
+    ctx.lineTo(65, 110);
+    ctx.lineTo(75, 110);
+    ctx.lineTo(75, 100);
+    ctx.bezierCurveTo(90, 95, 105, 75, 105, 55);
+    ctx.bezierCurveTo(105, 35, 90, 10, 60, 10);
+    ctx.closePath();
+  }
+
+  svgLeftClawPath(ctx) {
+    // M20 45 C5 40 0 50 5 60 C10 70 20 65 25 55 C28 48 25 45 20 45Z
+    ctx.moveTo(20, 45);
+    ctx.bezierCurveTo(5, 40, 0, 50, 5, 60);
+    ctx.bezierCurveTo(10, 70, 20, 65, 25, 55);
+    ctx.bezierCurveTo(28, 48, 25, 45, 20, 45);
+    ctx.closePath();
+  }
+
+  svgRightClawPath(ctx) {
+    // M100 45 C115 40 120 50 115 60 C110 70 100 65 95 55 C92 48 95 45 100 45Z
+    ctx.moveTo(100, 45);
+    ctx.bezierCurveTo(115, 40, 120, 50, 115, 60);
+    ctx.bezierCurveTo(110, 70, 100, 65, 95, 55);
+    ctx.bezierCurveTo(92, 48, 95, 45, 100, 45);
+    ctx.closePath();
   }
 
   draw() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    const cx = 180;
-    const cy = 155 + this.bounceY;
+    const s = this.scale;
+    const ox = this.offsetX;
+    const oy = this.offsetY + this.bounceY;
     const b = this.breathOffset;
 
     ctx.save();
-    ctx.translate(cx, cy);
 
     // Outer glow
-    const glowR = 85 + Math.sin(this.tick * 0.02) * 4;
-    const glow = ctx.createRadialGradient(0, 5, 40, 0, 5, glowR);
-    glow.addColorStop(0, 'rgba(255, 107, 107, 0.08)');
+    const glowR = 140 + Math.sin(this.tick * 0.02) * 6;
+    const glow = ctx.createRadialGradient(180, 160, 50, 180, 160, glowR);
+    glow.addColorStop(0, 'rgba(255, 107, 107, 0.06)');
     glow.addColorStop(1, 'transparent');
     ctx.fillStyle = glow;
-    ctx.fillRect(-glowR, 5 - glowR, glowR * 2, glowR * 2);
+    ctx.fillRect(0, 0, 360, 300);
 
     // Shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
     ctx.beginPath();
-    ctx.ellipse(0, 65 - this.bounceY * 0.3, 38, 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(180, oy + 120 * s, 50, 10, 0, 0, Math.PI * 2);
     ctx.fill();
 
+    // ---- Draw with SVG gradient ----
+    const grad = ctx.createLinearGradient(ox, oy, ox + 120 * s, oy + 120 * s);
+    grad.addColorStop(0, '#FF6B6B');
+    grad.addColorStop(1, '#E53935');
+
     // Claws (behind body)
-    this.drawClaws(ctx, b);
+    ctx.save();
+    ctx.translate(ox, oy + b * 0.3);
+    ctx.scale(s, s);
+
+    // Apply claw swing rotation around their attachment points
+    ctx.save();
+    ctx.translate(20, 45);
+    ctx.rotate(-this.clawSwing);
+    ctx.translate(-20, -45);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    this.svgLeftClawPath(ctx);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(100, 45);
+    ctx.rotate(this.clawSwing);
+    ctx.translate(-100, -45);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    this.svgRightClawPath(ctx);
+    ctx.fill();
+    ctx.restore();
 
     // Body
-    this.drawBody(ctx, b);
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    this.svgBodyPath(ctx);
+    ctx.fill();
 
-    // Face
-    this.drawFace(ctx);
+    // Subtle body shine
+    const shine = ctx.createRadialGradient(50, 35, 0, 60, 55, 55);
+    shine.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+    shine.addColorStop(0.5, 'rgba(255, 255, 255, 0.03)');
+    shine.addColorStop(1, 'transparent');
+    ctx.fillStyle = shine;
+    ctx.beginPath();
+    ctx.ellipse(60, 55, 45, 48, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Antennae
-    this.drawAntennae(ctx, b);
+    // Antennae (SVG: M45 15 Q35 5 30 8 / M75 15 Q85 5 90 8)
+    const coralColor = '#FF6B6B';
+    ctx.strokeStyle = coralColor;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
 
-    // Particles
+    // Left antenna with swing
+    ctx.save();
+    ctx.translate(45, 15);
+    ctx.rotate(-0.1 + this.antennaSwing);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(35 - 45, 5 - 15, 30 - 45, 8 - 15);
+    ctx.stroke();
+    ctx.restore();
+
+    // Right antenna with swing
+    ctx.save();
+    ctx.translate(75, 15);
+    ctx.rotate(0.1 - this.antennaSwing);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(85 - 75, 5 - 15, 90 - 75, 8 - 15);
+    ctx.stroke();
+    ctx.restore();
+
+    // Eyes (SVG: cx=45 cy=35 r=6, cx=75 cy=35 r=6)
+    if (this.isBlinking || this.state === 'sleep') {
+      // Closed eyes
+      ctx.strokeStyle = '#050810';
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      [45, 75].forEach(ex => {
+        ctx.beginPath();
+        ctx.arc(ex, 35, 4, 0.3, Math.PI - 0.3);
+        ctx.stroke();
+      });
+    } else {
+      [45, 75].forEach(ex => {
+        // Eye fill (black)
+        ctx.fillStyle = '#050810';
+        ctx.beginPath();
+        ctx.arc(ex, 35, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cyan glow dot (SVG: cx+1, cy-1, r=2)
+        const glowR2 = 2 + this.eyeGlowPhase * 0.5;
+        ctx.fillStyle = '#00E5CC';
+        ctx.beginPath();
+        ctx.arc(ex + 1, 34, glowR2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Glow aura
+        const eg = ctx.createRadialGradient(ex + 1, 34, 0, ex + 1, 34, 10);
+        eg.addColorStop(0, `rgba(0, 229, 204, ${0.15 + this.eyeGlowPhase * 0.1})`);
+        eg.addColorStop(1, 'transparent');
+        ctx.fillStyle = eg;
+        ctx.fillRect(ex - 10, 24, 22, 22);
+      });
+    }
+
+    ctx.restore();
+
+    // Particles (draw in screen space)
     this.drawParticles(ctx);
 
     ctx.restore();
 
-    if (this.state === 'sleep') this.drawSleepZzz(ctx, cx, cy);
-  }
-
-  drawBody(ctx, b) {
-    const squish = 1 + b * 0.003;
-
-    // Main body - rounded dome shape (like the SVG)
-    const bodyGrad = this.bodyGradient(ctx, -50, -50, 50, 60);
-    ctx.fillStyle = bodyGrad;
-    ctx.beginPath();
-    // Top dome
-    ctx.moveTo(0, -55);
-    ctx.bezierCurveTo(45, -55, 55, -15, 50, 20);
-    ctx.bezierCurveTo(48, 45, 30, 60, 0, 62);
-    ctx.bezierCurveTo(-30, 60, -48, 45, -50, 20);
-    ctx.bezierCurveTo(-55, -15, -45, -55, 0, -55);
-    ctx.closePath();
-    ctx.fill();
-
-    // Body shine
-    const shine = ctx.createRadialGradient(-15, -25, 0, 0, 0, 50);
-    shine.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
-    shine.addColorStop(0.5, 'rgba(255, 255, 255, 0.04)');
-    shine.addColorStop(1, 'transparent');
-    ctx.fillStyle = shine;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 48, 55, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  drawClaws(ctx, b) {
-    const sw = this.clawSwing;
-
-    // Left claw
-    ctx.save();
-    ctx.translate(-45, 10 + b * 0.3);
-    ctx.rotate(-0.15 + sw);
-
-    const clawGrad = this.bodyGradient(ctx, -25, -15, 5, 15);
-    ctx.fillStyle = clawGrad;
-
-    // Claw arm
-    ctx.beginPath();
-    ctx.ellipse(-12, 0, 14, 10, -0.3, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Claw pincer top
-    ctx.beginPath();
-    ctx.moveTo(-20, -5);
-    ctx.quadraticCurveTo(-32, -18, -22, -22);
-    ctx.quadraticCurveTo(-14, -18, -14, -8);
-    ctx.closePath();
-    ctx.fill();
-
-    // Claw pincer bottom
-    ctx.beginPath();
-    ctx.moveTo(-20, 5);
-    ctx.quadraticCurveTo(-32, 18, -22, 22);
-    ctx.quadraticCurveTo(-14, 18, -14, 8);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
-
-    // Right claw
-    ctx.save();
-    ctx.translate(45, 10 + b * 0.3);
-    ctx.rotate(0.15 - sw);
-
-    ctx.fillStyle = clawGrad;
-
-    ctx.beginPath();
-    ctx.ellipse(12, 0, 14, 10, 0.3, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(20, -5);
-    ctx.quadraticCurveTo(32, -18, 22, -22);
-    ctx.quadraticCurveTo(14, -18, 14, -8);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(20, 5);
-    ctx.quadraticCurveTo(32, 18, 22, 22);
-    ctx.quadraticCurveTo(14, 18, 14, 8);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
-  }
-
-  drawFace(ctx) {
-    const eyeY = -15;
-    const eyeSpacing = 18;
-    const eyeR = 8;
-
-    if (this.isBlinking || this.state === 'sleep') {
-      // Closed eyes - cute arcs
-      ctx.strokeStyle = '#050810';
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
-      [-eyeSpacing, eyeSpacing].forEach(ex => {
-        ctx.beginPath();
-        ctx.arc(ex, eyeY, eyeR * 0.6, 0.3, Math.PI - 0.3);
-        ctx.stroke();
-      });
-    } else {
-      [-eyeSpacing, eyeSpacing].forEach(ex => {
-        // Eye (black, like the SVG)
-        ctx.fillStyle = '#050810';
-        ctx.beginPath();
-        ctx.arc(ex, eyeY, eyeR, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Cyan glow dot (like the SVG: cx+1, cy-1, r=2)
-        ctx.fillStyle = '#00E5CC';
-        const glowSize = 2.5 + this.eyeGlowPhase * 0.5;
-        ctx.beginPath();
-        ctx.arc(ex + 2, eyeY - 2, glowSize, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Glow aura
-        const eg = ctx.createRadialGradient(ex + 2, eyeY - 2, 0, ex + 2, eyeY - 2, 8);
-        eg.addColorStop(0, `rgba(0, 229, 204, ${0.2 + this.eyeGlowPhase * 0.1})`);
-        eg.addColorStop(1, 'transparent');
-        ctx.fillStyle = eg;
-        ctx.fillRect(ex - 8, eyeY - 10, 20, 20);
-
-        // Small white highlight
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.beginPath();
-        ctx.arc(ex + 3, eyeY - 3, 1.2, 0, Math.PI * 2);
-        ctx.fill();
-      });
-    }
-
-    // Mouth
-    if (this.mouthOpen > 0.5) {
-      ctx.fillStyle = '#C62828';
-      ctx.beginPath();
-      ctx.ellipse(0, 8, 4, this.mouthOpen, 0, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      ctx.strokeStyle = '#C62828';
-      ctx.lineWidth = 1.5;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.arc(0, 5, 5, 0.15, Math.PI - 0.15);
-      ctx.stroke();
-    }
-  }
-
-  drawAntennae(ctx, b) {
-    const sw = this.antennaSwing;
-
-    ctx.lineCap = 'round';
-
-    // Left antenna (like SVG: M45 15 Q35 5 30 8)
-    ctx.save();
-    ctx.translate(-18, -50 + b * 0.3);
-    ctx.rotate(-0.4 + sw);
-
-    const ag = ctx.createLinearGradient(0, 0, -15, -25);
-    ag.addColorStop(0, '#FF6B6B');
-    ag.addColorStop(1, '#E53935');
-    ctx.strokeStyle = ag;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.quadraticCurveTo(-8, -15, -15, -22);
-    ctx.stroke();
-
-    // Tip
-    ctx.fillStyle = '#FF6B6B';
-    ctx.beginPath();
-    ctx.arc(-15, -22, 2.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    // Right antenna (like SVG: M75 15 Q85 5 90 8)
-    ctx.save();
-    ctx.translate(18, -50 + b * 0.3);
-    ctx.rotate(0.4 - sw);
-
-    ctx.strokeStyle = ag;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.quadraticCurveTo(8, -15, 15, -22);
-    ctx.stroke();
-
-    ctx.fillStyle = '#FF6B6B';
-    ctx.beginPath();
-    ctx.arc(15, -22, 2.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+    if (this.state === 'sleep') this.drawSleepZzz(ctx, 180, 155);
   }
 
   drawParticles(ctx) {
     this.particles.forEach(p => {
       ctx.globalAlpha = p.life;
-      if (p.type === 'sparkle') {
-        ctx.fillStyle = '#00E5CC';
-        ctx.beginPath();
-        ctx.arc(p.x - 180, p.y - 155, p.size, 0, Math.PI * 2);
-        ctx.fill();
-      } else {
-        ctx.fillStyle = '#FF6B6B';
-        ctx.beginPath();
-        ctx.arc(p.x - 180, p.y - 155, p.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      ctx.fillStyle = p.type === 'sparkle' ? '#00E5CC' : '#FF6B6B';
+      ctx.beginPath();
+      ctx.arc(p.x - 180, p.y - 155, p.size, 0, Math.PI * 2);
+      ctx.fill();
     });
     ctx.globalAlpha = 1;
   }
