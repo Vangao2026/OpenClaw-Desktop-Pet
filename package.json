@@ -1,0 +1,32 @@
+{
+  "name": "claw-desktop-pet",
+  "version": "1.0.0",
+  "description": "Claw - AI Desktop Pet",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder --win"
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.0.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.claw.desktop-pet",
+    "productName": "Claw Pet",
+    "win": {
+      "target": "nsis",
+      "icon": "renderer/assets/icon.png",
+      "sign": null,
+      "signingHashAlgorithms": []
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "afterSign": null,
+    "forceCodeSigning": false
+  }
+}

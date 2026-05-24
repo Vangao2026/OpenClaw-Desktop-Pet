@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claw Pet</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="pet-container">
+    <!-- Chat bubble -->
+    <div id="chat-bubble" class="hidden">
+      <div id="chat-header">
+        <span id="chat-title">Claw</span>
+        <button id="chat-close" title="关闭">✕</button>
+      </div>
+      <div id="chat-messages"></div>
+    </div>
+
+    <!-- Music control bar -->
+    <div id="music-bar" class="hidden">
+      <div id="music-header">
+        <span id="music-label">♪ Now Playing</span>
+        <div id="music-header-btns">
+          <button id="music-collapse" title="收起面板">−</button>
+          <button id="music-hide" title="隐藏面板">✕</button>
+        </div>
+      </div>
+      <div id="music-info">
+        <span id="music-title">--</span>
+        <span id="music-artist">--</span>
+      </div>
+      <div id="music-progress">
+        <div id="music-progress-fill"></div>
+      </div>
+      <div id="music-time">
+        <span id="music-time-now">0:00</span>
+        <span id="music-time-total">0:00</span>
+      </div>
+      <div id="music-controls">
+        <button id="btn-prev" title="上一曲">⏮</button>
+        <button id="btn-toggle" title="播放/暂停">▶</button>
+        <button id="btn-next" title="下一曲">⏭</button>
+        <button id="btn-vol-down" title="音量-">🔉</button>
+        <button id="btn-vol-up" title="音量+">🔊</button>
+        <button id="btn-collect" title="收藏">♡</button>
+      </div>
+    </div>
+
+    <!-- Canvas for pet animation -->
+    <canvas id="pet-canvas" width="360" height="300"></canvas>
+
+    <!-- Input bar -->
+    <div id="input-bar" class="hidden">
+      <input type="text" id="chat-input" placeholder="跟我说点什么..." autocomplete="off" />
+      <button id="send-btn">▶</button>
+    </div>
+
+    <!-- Status indicator -->
+    <div id="status-dot"></div>
+  </div>
+
+  <script src="pet.js"></script>
+  <script src="chat.js"></script>
+  <script src="lxmusic.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
