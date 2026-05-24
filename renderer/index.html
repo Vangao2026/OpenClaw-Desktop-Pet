@@ -14,6 +14,10 @@
         <span id="chat-title">Claw</span>
         <button id="chat-close" title="关闭">✕</button>
       </div>
+      <div id="input-bar">
+        <input type="text" id="chat-input" placeholder="跟我说点什么..." autocomplete="off" />
+        <button id="send-btn">▶</button>
+      </div>
       <div id="chat-messages"></div>
     </div>
 
@@ -49,13 +53,7 @@
     </div>
 
     <!-- Canvas for pet animation -->
-    <canvas id="pet-canvas" width="360" height="300"></canvas>
-
-    <!-- Input bar -->
-    <div id="input-bar" class="hidden">
-      <input type="text" id="chat-input" placeholder="跟我说点什么..." autocomplete="off" />
-      <button id="send-btn">▶</button>
-    </div>
+    <canvas id="pet-canvas" width="360" height="360"></canvas>
 
     <!-- Status indicator -->
     <div id="status-dot"></div>

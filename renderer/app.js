@@ -1,6 +1,5 @@
 /**
- * Claw Pet - Main Application (v5 - Optimized)
- * Ties together pet animation, chat, drag, and LX Music controls
+ * Claw Pet - Main Application
  */
 
 (function () {
@@ -11,7 +10,7 @@
   const canvas       = $('pet-canvas');
   const chatBubble   = $('chat-bubble');
   const chatMessages = $('chat-messages');
-  const inputBar     = $('input-bar');
+  const inputBar     = chatBubble.querySelector('#input-bar');
   const chatInput    = $('chat-input');
   const sendBtn      = $('send-btn');
   const chatClose    = $('chat-close');
@@ -68,7 +67,6 @@
   function toggleChat() {
     chatVisible = !chatVisible;
     chatBubble.classList.toggle('hidden', !chatVisible);
-    inputBar.classList.toggle('hidden', !chatVisible);
 
     if (chatVisible) {
       pet.setState('look');
@@ -76,7 +74,7 @@
       window.petAPI.setSize(360, 580);
     } else {
       pet.setState('idle');
-      window.petAPI.setSize(360, 400);
+      window.petAPI.setSize(360, 420);
     }
     // Re-evaluate click-through
     setClickThrough(false);
@@ -147,6 +145,13 @@
       musicBar.classList.add('hidden');
     }
   };
+
+  // Music bar right-click: show music-specific menu
+  musicBar.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    showMusicContextMenu(e.clientX, e.clientY);
+  });
 
   musicCollapse.addEventListener('click', () => {
     musicBar.classList.toggle('collapsed');
@@ -241,7 +246,10 @@
   //  Context menu
   // =============================================
 
-  canvas.addEventListener('contextmenu', (e) => {
+  // Prevent canvas context menu when clicking on UI elements
+  document.addEventListener('contextmenu', (e) => {
+    // Don't interfere with music bar or chat UI
+    if (e.target.closest('#music-bar, #chat-bubble, #input-bar')) return;
     e.preventDefault();
     showContextMenu(e.clientX, e.clientY);
   });
@@ -253,13 +261,25 @@
     const menu = document.createElement('div');
     menu.id = 'context-menu';
     Object.assign(menu.style, {
-      position: 'fixed', left: x + 'px', top: y + 'px',
+      position: 'fixed',
       background: 'rgba(20, 8, 8, 0.95)',
       border: '1px solid rgba(255, 69, 58, 0.4)',
       borderRadius: '8px', padding: '4px 0',
       zIndex: '1000', minWidth: '160px',
       backdropFilter: 'blur(8px)',
     });
+    // Position after measuring size
+    menu.style.visibility = 'hidden';
+    document.body.appendChild(menu);
+    const menuH = menu.offsetHeight;
+    const menuW = menu.offsetWidth;
+    const winH = window.innerHeight;
+    const winW = window.innerWidth;
+    const finalY = (y + menuH > winH) ? y - menuH : y;
+    const finalX = (x + menuW > winW) ? x - menuW : x;
+    menu.style.left = Math.max(0, finalX) + 'px';
+    menu.style.top = Math.max(0, finalY) + 'px';
+    menu.style.visibility = 'visible';
 
     const musicLabel = lxm.connected
       ? `🎵 ${lxm.current?.name || 'Music'}`
@@ -276,10 +296,6 @@
           showChat();
         }
       }},
-      null, // separator
-      { label: '⏮ 上一曲', action: () => lxm.prev() },
-      { label: lxm.current?.status === 'playing' ? '⏸ 暂停' : '▶ 播放', action: () => lxm.toggle() },
-      { label: '⏭ 下一曲', action: () => lxm.next() },
       { label: musicBar.classList.contains('hidden') ? '📺 显示面板' : '📺 隐藏面板', action: toggleMusicBar },
       null,
       { label: '⚙️ 设置', action: showSettings },
@@ -305,7 +321,90 @@
       menu.appendChild(btn);
     }
 
+    const close = (e) => {
+      if (!menu.contains(e.target)) {
+        menu.remove();
+        document.removeEventListener('click', close);
+      }
+    };
+    setTimeout(() => document.addEventListener('click', close), 10);
+  }
+
+  // =============================================
+  //  Music context menu
+  // =============================================
+
+  function showMusicContextMenu(x, y) {
+    const old = $('context-menu');
+    if (old) old.remove();
+
+    const menu = document.createElement('div');
+    menu.id = 'context-menu';
+    Object.assign(menu.style, {
+      position: 'fixed',
+      background: 'rgba(20, 8, 8, 0.95)',
+      border: '1px solid rgba(255, 69, 58, 0.4)',
+      borderRadius: '8px', padding: '4px 0',
+      zIndex: '1000', minWidth: '140px',
+      backdropFilter: 'blur(8px)',
+    });
+
+    const items = [
+      { label: lxm.current?.status === 'playing' ? '⏸ 暂停' : '▶ 播放', action: () => lxm.toggle() },
+      { label: '⏮ 上一曲', action: () => lxm.prev() },
+      { label: '⏭ 下一曲', action: () => lxm.next() },
+      null,
+      { label: musicBar.classList.contains('collapsed') ? '📖 展开面板' : '📕 收起面板', action: () => {
+        musicBar.classList.toggle('collapsed');
+        musicCollapse.textContent = musicBar.classList.contains('collapsed') ? '+' : '−';
+      }},
+      { label: '📺 隐藏面板', action: () => {
+        musicBar.classList.add('hidden');
+        musicBar.dataset.userHidden = 'true';
+      }},
+    ];
+
+    for (const item of items) {
+      if (!item) {
+        const sep = document.createElement('div');
+        Object.assign(sep.style, { height: '1px', background: 'rgba(255,69,58,0.2)', margin: '4px 0' });
+        menu.appendChild(sep);
+        continue;
+      }
+      const btn = document.createElement('div');
+      btn.textContent = item.label;
+      Object.assign(btn.style, {
+        padding: '6px 14px', color: '#FF8A80', fontSize: '12px', cursor: 'pointer',
+      });
+      btn.addEventListener('mouseenter', () => btn.style.background = 'rgba(255,69,58,0.15)');
+      btn.addEventListener('mouseleave', () => btn.style.background = 'transparent');
+      btn.addEventListener('click', () => { menu.remove(); item.action(); });
+      menu.appendChild(btn);
+    }
+
+    // Position with boundary + lobster avoidance
+    menu.style.visibility = 'hidden';
     document.body.appendChild(menu);
+    const menuH = menu.offsetHeight;
+    const menuW = menu.offsetWidth;
+    const winH = window.innerHeight;
+    const winW = window.innerWidth;
+    const b = pet.bounds;
+
+    let fx = x, fy = y;
+    const hit = (mx, my) => mx < b.x+b.w && mx+menuW > b.x && my < b.y+b.h && my+menuH > b.y;
+
+    if (hit(fx, fy)) {
+      const lx = x - menuW, ly = y - menuH;
+      if (lx >= 0 && !hit(lx, fy)) fx = lx;
+      else if (ly >= 0 && !hit(fx, ly)) fy = ly;
+      else if (lx >= 0 && ly >= 0) { fx = lx; fy = ly; }
+    }
+    fx = Math.max(0, Math.min(fx, winW - menuW));
+    fy = Math.max(0, Math.min(fy, winH - menuH));
+    menu.style.left = fx + 'px';
+    menu.style.top = fy + 'px';
+    menu.style.visibility = 'visible';
 
     const close = (e) => {
       if (!menu.contains(e.target)) {
@@ -383,9 +482,12 @@
   }
 
   document.addEventListener('mousemove', (e) => {
+    // Click-through
     const overPet = isOverPet(e.clientX, e.clientY);
     const overUI = e.target.closest('#chat-bubble, #input-bar, #music-bar, #context-menu');
     setClickThrough(!overPet && !overUI);
+    // Eye tracking
+    pet.setMousePos(e.clientX, e.clientY);
   });
 
   document.addEventListener('mouseleave', () => setClickThrough(true));

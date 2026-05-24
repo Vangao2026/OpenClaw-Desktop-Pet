@@ -1,7 +1,6 @@
 /**
- * Claw Pet - Lobster Animation Engine (v5 - Optimized)
+ * Claw Pet - Lobster Animation Engine
  * Uses exact SVG paths from openclaw.ai homepage.
- * Fixed: relative coordinates, destroy method, consistent positioning.
  */
 
 class PetRenderer {
@@ -21,12 +20,14 @@ class PetRenderer {
     this.breathOffset = 0;
     this.eyeGlowPhase = 0;
     this._rafId = null;
+    this.mouseX = 180; // center of canvas
+    this.mouseY = 150;
 
-    // SVG is 120x120, draw at 1.6x
-    this.scale = 1.6;
-    this.size = 120 * this.scale; // 192px
+    // SVG is 120x120, draw at 1.3x
+    this.scale = 1.3;
+    this.size = 120 * this.scale;
     this.offsetX = (this.canvas.width - this.size) / 2;
-    this.offsetY = 160;
+    this.offsetY = 120;
 
     this._startLoop();
   }
@@ -52,6 +53,11 @@ class PetRenderer {
       this._rafId = requestAnimationFrame(loop);
     };
     this._rafId = requestAnimationFrame(loop);
+  }
+
+  setMousePos(x, y) {
+    this.mouseX = x;
+    this.mouseY = y;
   }
 
   destroy() {
@@ -204,7 +210,7 @@ class PetRenderer {
     // Ambient glow
     const glowR = 140 + Math.sin(this.tick * 0.02) * 6;
     const glow = ctx.createRadialGradient(this.centerX, this.centerY, 50, this.centerX, this.centerY, glowR);
-    glow.addColorStop(0, 'rgba(255, 107, 107, 0.06)');
+    glow.addColorStop(0, 'rgba(198, 40, 40, 0.08)');
     glow.addColorStop(1, 'transparent');
     ctx.fillStyle = glow;
     ctx.fillRect(0, 0, W, H);
@@ -217,22 +223,22 @@ class PetRenderer {
 
     // Gradient (matches CSS var(--logo-gradient-start/end))
     const grad = ctx.createLinearGradient(ox, oy, ox + 120 * s, oy + 120 * s);
-    grad.addColorStop(0, '#FF6B6B');
-    grad.addColorStop(1, '#E53935');
+    grad.addColorStop(0, '#C62828');
+    grad.addColorStop(1, '#8B0000');
 
     // -- Draw in SVG-scaled space --
     ctx.save();
     ctx.translate(ox, oy + b * 0.3);
     ctx.scale(s, s);
 
-    // Claws (behind body)
-    this._drawClaws(ctx, grad);
-
-    // Body
+    // Body (drawn first)
     ctx.fillStyle = grad;
     ctx.beginPath();
     this._bodyPath(ctx);
     ctx.fill();
+
+    // Claws (drawn on top of body)
+    this._drawClaws(ctx, grad);
 
     // Body shine
     const shine = ctx.createRadialGradient(50, 35, 0, 60, 55, 55);
@@ -273,6 +279,9 @@ class PetRenderer {
     ctx.beginPath();
     this._leftClawPath(ctx);
     ctx.fill();
+    ctx.strokeStyle = '#7B1A1A';
+    ctx.lineWidth = 0.2;
+    ctx.stroke();
     ctx.restore();
 
     // Right claw
@@ -284,12 +293,15 @@ class PetRenderer {
     ctx.beginPath();
     this._rightClawPath(ctx);
     ctx.fill();
+    ctx.strokeStyle = '#7B1A1A';
+    ctx.lineWidth = 0.2;
+    ctx.stroke();
     ctx.restore();
   }
 
   _drawAntennae(ctx) {
-    ctx.strokeStyle = '#FF6B6B';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#C62828';
+    ctx.lineWidth = 3;
     ctx.lineCap = 'round';
 
     // Left: M45 15 Q35 5 30 8
@@ -314,6 +326,14 @@ class PetRenderer {
   }
 
   _drawEyes(ctx) {
+    // Calculate mouse direction in SVG space
+    const s = this.scale;
+    const ox = this.offsetX;
+    const oy = this.offsetY + this.bounceY + this.breathOffset * 0.3;
+    // Convert mouse screen coords to SVG coords
+    const mxSvg = (this.mouseX - ox) / s;
+    const mySvg = (this.mouseY - oy) / s;
+
     if (this.isBlinking || this.state === 'sleep') {
       ctx.strokeStyle = '#050810';
       ctx.lineWidth = 2;
@@ -327,32 +347,45 @@ class PetRenderer {
     }
 
     [45, 75].forEach(ex => {
+      const ey = 35;
+
+      // Direction from eye center to mouse
+      const dx = mxSvg - ex;
+      const dy = mySvg - ey;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const maxOffset = 2.5; // max pupil movement
+      let offX = 0, offY = 0;
+      if (dist > 1) {
+        offX = (dx / dist) * maxOffset;
+        offY = (dy / dist) * maxOffset;
+      }
+
       // Black eye
       ctx.fillStyle = '#050810';
       ctx.beginPath();
-      ctx.arc(ex, 35, 6, 0, Math.PI * 2);
+      ctx.arc(ex, ey, 6, 0, Math.PI * 2);
       ctx.fill();
 
-      // Cyan glow dot (SVG: cx+1, cy-1, r=2)
+      // Cyan glow dot - follows mouse
       const r = 2 + this.eyeGlowPhase * 0.5;
       ctx.fillStyle = '#00E5CC';
       ctx.beginPath();
-      ctx.arc(ex + 1, 34, r, 0, Math.PI * 2);
+      ctx.arc(ex + 1 + offX, ey - 1 + offY, r, 0, Math.PI * 2);
       ctx.fill();
 
       // Glow aura
-      const eg = ctx.createRadialGradient(ex + 1, 34, 0, ex + 1, 34, 10);
+      const eg = ctx.createRadialGradient(ex + 1 + offX, ey - 1 + offY, 0, ex + 1 + offX, ey - 1 + offY, 10);
       eg.addColorStop(0, `rgba(0, 229, 204, ${0.15 + this.eyeGlowPhase * 0.1})`);
       eg.addColorStop(1, 'transparent');
       ctx.fillStyle = eg;
-      ctx.fillRect(ex - 10, 24, 22, 22);
+      ctx.fillRect(ex - 10, ey - 11, 22, 22);
     });
   }
 
   _drawParticles(ctx) {
     for (const p of this.particles) {
       ctx.globalAlpha = p.life;
-      ctx.fillStyle = p.type === 'sparkle' ? '#00E5CC' : '#FF6B6B';
+      ctx.fillStyle = p.type === 'sparkle' ? '#00E5CC' : '#C62828';
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
       ctx.fill();
