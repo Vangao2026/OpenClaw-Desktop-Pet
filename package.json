@@ -11,14 +11,16 @@
   "devDependencies": {
     "@electron/packager": "^20.0.0",
     "electron": "^33.0.0",
-    "electron-builder": "^25.0.0"
+    "electron-builder": "^25.0.0",
+    "sharp": "^0.34.5",
+    "to-ico": "^1.1.5"
   },
   "build": {
     "appId": "com.openclaw.desktop-pet",
     "productName": "OpenClaw Desktop Pet",
     "win": {
       "target": "nsis",
-      "icon": "renderer/assets/icon.png",
+      "icon": "renderer/assets/icon.ico",
       "sign": null,
       "signingHashAlgorithms": []
     },
